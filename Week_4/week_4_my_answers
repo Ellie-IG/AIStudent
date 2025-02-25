@@ -1,0 +1,359 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, mean_squared_error, r2_score
+from sklearn.linear_model import LinearRegression
+from sklearn.svm import SVR
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.datasets import load_iris
+from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
+from sklearn.mixture import GaussianMixture
+
+'''
+## Task 1: Data Preprocessing
+
+As we mentioned before, Machine Learning is all about models learning from data to make predictions or decisions. But before we can train a model, we need to prepare the data. This process is called Data Preprocessing. In this task, you will learn how to handle the data before training a model.
+First let's load the data, we will use the Heart Disease dataset from the UCI Machine Learning Repository. This dataset contains 303 samples with 13 features each. The goal is to predict whether a patient has heart disease or not. You can find the dataset on Kaggle here.
+Your mission is to load the data, preprocess it, and split it into training and test sets.
+
+Tasks:
+1. Load the data using the following code:
+2. Identify the features and the target variable. The target variable is the variable we want to predict, in this case, it is the target column.
+3. Identify missing values in the dataset, decide if to remove or fill them.
+4. Handle categorical variables. In this dataset, we have a categorical variable called cp that represents the chest pain type.
+5. Split the data into training and test sets. You can use the following code:
+Note that we split the data into training and test sets. The training set is used to train the model, while the test set is used to evaluate the model. We use 80% of the data for training and 20% for testing.
+
+Some additional tasks you can do:
+1. Normalize the data. Normalizing the data is important because it can help the model converge faster.
+2. Create new features. Sometimes creating new features can help the model learn better. For example, you can create a new feature by combining two features.
+'''
+
+print('   ## Task 1 ')
+
+heart_data = pd.read_csv('Week_4/data/Heart.csv', delimiter=';')
+
+#Identify the features and the target variable. 
+target = heart_data['cardio']
+features = heart_data.drop('cardio', axis=1)
+
+# Identify missing values in the dataset
+missing_values = features.isnull().sum()
+if missing_values.sum() == 0:
+    print('No missing values')
+else: 
+    print(f'missing values: {missing_values}')
+
+# Handle categorical variables. 
+# According to README: In this dataset, we have a categorical variable called cp that represents the chest pain type.
+# Observed: No categorical variables. All data numerical.
+if not False in [pd.api.types.is_numeric_dtype(heart_data[col]) for col in heart_data.columns]:
+    print('All data is numerical')
+else: 
+    categorical_columns = heart_data.select_dtypes(include=['object', 'category'])
+    print(categorical_columns)
+
+#Split the data into training and test sets. 
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
+
+# Normalize the Data
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Create new features. 
+# I don't know what feutures to add (yet?)
+
+print('--------------------------------------------------------------------------------------------')
+
+'''
+## Task 2: Training a ML Algorithm for Classification
+Now that we have our data ready, we can start training a Machine Learning model. As you noticed in the first task our data is labeled, which means we can use a Supervised Learning algorithm. In this task, you will learn how to train a model for classification.
+
+We will first train a simple Perceptron model, and then move on to a more advanced models, your first task is to study the following code and understand how it works:
+
+As you can see we have a class called Perceptron that has 3 main methods:
+fit: This method is used to train the model. It receives the input data X and the target values y, and updates the weights of the model.
+net_input: This method calculates the net input of the model.
+predict: This method predicts the class label after the unit step.
+Now, your task is to train the Perceptron model using the previously loaded data. You can use the following code to train the model:
+
+Now that we have trained our model we can evaluate it using the test data. You can use the following code to evaluate the model:
+
+We can visualize the model's decision boundaries using the following code:
+
+Although the Perceptron model is a simple model, it can be very useful for linearly separable data. In the next tasks, we will train more advanced models.
+Scikit-learn is a powerful library that provides simple and efficient tools for data mining and data analysis. It is built on NumPy, SciPy, and Matplotlib. In this task, you will learn how to use Scikit-learn to train a more advanced model for classification.
+Your task is to test the following models finding the best one for the dataset. You will use the following models described in the Scikit-learn documentation:
+Logistic Regression
+Support Vector Machine
+Decision Tree
+Random Forest
+You can use the following code to train and evaluate the models, you will notice that the API is the same as the Perceptron model:
+'''
+
+print('   ## Task2 ')
+
+class Perceptron:
+    """Perceptron classifier.
+    Parameters
+    ------------
+    eta : float
+    Learning rate (between 0.0 and 1.0)
+    n_iter : int
+    Passes over the training dataset.
+    random_state : int
+    Random number generator seed for random weight
+    initialization.
+    Attributes
+    -----------
+    w_ : 1d-array
+    Weights after fitting.
+    b_ : Scalar
+    Bias unit after fitting.
+    errors_ : list
+    Number of misclassifications (updates) in each epoch.
+    """
+    def __init__(self, eta=0.01, n_iter=50, random_state=1):
+        self.eta = eta
+        self.n_iter = n_iter
+        self.random_state = random_state
+
+    def fit(self, X, y):
+        """Fit training data.
+
+        Parameters
+        ----------
+        X : {array-like}, shape = [n_samples, n_features]
+        Training vectors, where n_samples is the number of samples and n_features is the number of features.
+        y : array-like, shape = [n_samples]
+        Target values.
+
+        Returns
+        -------
+        self : object
+        """
+        rgen = np.random.RandomState(self.random_state)
+        self.w_ = rgen.normal(loc=0.0, scale=0.01, size=1 + X.shape[1])
+        self.errors_ = []
+        self.b_ = 0
+        for _ in range(self.n_iter):
+            errors = 0
+            for xi, target in zip(X, y):
+                update = self.eta * (target - self.predict(xi))
+                self.w_[1:] += update * xi
+                self.w_[0] += update
+                errors += int(update != 0.0)
+            self.errors_.append(errors)
+        return self
+
+    def net_input(self, X):
+        """Calculate net input"""
+        return np.dot(X, self.w_[1:]) + self.w_[0]
+
+    def predict(self, X):
+        """Return class label after unit step"""
+        return np.where(self.net_input(X) >= 0.0, 1, -1)
+
+# Training the model
+try: 
+    model = Perceptron(eta=0.1, n_iter=10)
+    model.fit(X_train, y_train)
+    print('The model is trained')
+except: 
+    print('something went wrong when training the model')
+
+# Checking accuracy of training
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy of training/model: {accuracy}")
+
+# Visualise model's decision bounderies
+features_array = features.to_numpy()
+x1_min, x1_max = features_array[:, 0].min() - 1, features_array[:, 0].max() + 1
+x2_min, x2_max = features_array[:, 1].min() - 1, features_array[:, 1].max() + 1
+xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, 0.1),
+                       np.arange(x2_min, x2_max, 0.1))
+Z = model.predict(np.array([xx1.ravel(), xx2.ravel()]).T)
+Z = Z.reshape(xx1.shape)
+plt.contourf(xx1, xx2, Z, alpha=0.3, cmap=ListedColormap(('red', 'blue')))
+plt.scatter(features[:, 0], features[:, 1], c=target, marker='o')
+plt.show()
+
+
+# Initialize models
+models = {
+    "Logistic Regression": LogisticRegression(),
+    "Support Vector Machine": SVC(),
+    "Decision Tree": DecisionTreeClassifier(),
+    "Random Forest": RandomForestClassifier()
+}
+
+# Testing the other models
+results = {}
+
+for model_name, model in models.items():
+    # Train the model
+    model.fit(X_train, y_train)
+    
+    # Predict on the test set
+    y_pred = model.predict(X_test)
+    
+    # Calculate accuracy
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"{model_name} accuracy: {accuracy}")
+
+print('--------------------------------------------------------------------------------------------')
+
+'''
+Task 3: Best Practices for Model Evaluation and Hyperparameter Tuning
+In this task, you will learn some best practices for model evaluation and hyperparameter tuning.
+When training a Machine Learning model, it is important to evaluate the model properly. There are several metrics that can be used to evaluate a model, such as accuracy, precision, recall, F1-score, and ROC-AUC.
+In this task, you will learn how to evaluate a model using the following metrics:
+Accuracy: The proportion of correctly classified instances.
+Precision: The proportion of correctly classified positive instances among all instances classified as positive.
+Recall: The proportion of correctly classified positive instances among all actual positive instances.
+F1-score: The harmonic mean of precision and recall.
+You can use the following code to calculate these metrics:
+
+Another important aspect of training a Machine Learning model is hyperparameter tuning. Hyperparameters are parameters that are set before the learning process begins. They control the learning process and affect the performance of the model.
+In this task, you will learn how to tune the hyperparameters of a model using Grid Search. Grid Search is a technique that searches for the best hyperparameters by evaluating all possible combinations of hyperparameters.
+You can use the following code to perform Grid Search:
+'''
+
+print('   ## Task 3')
+
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred)
+recall = recall_score(y_test, y_pred)
+f1 = f1_score(y_test, y_pred)
+
+# Grid search for best hyperparameters
+param_grid = {
+    'C': [0.1, 1, 10, 100],
+    'gamma': [1, 0.1, 0.01, 0.001],
+    'kernel': ['rbf', 'linear', 'poly', 'sigmoid']
+}
+grid_search = GridSearchCV(SVC(), param_grid, cv=5)
+grid_search.fit(X_train, y_train)
+best_params = grid_search.best_params_
+best_score = grid_search.best_score_
+
+print(f"Best parameters: {best_params}")
+print(f"Best score: {best_score}")
+
+print(f"Accuracy: {accuracy}")
+print(f"Precision: {precision}")
+print(f"Recall: {recall}")
+print(f"F1-score: {f1}")
+
+print('--------------------------------------------------------------------------------------------')
+
+'''
+## Excersise 4
+For this task, you will train a Machine Learning model for regression. Regression is a type of supervised learning that predicts a continuous value. In this task, you will use the Boston Housing dataset from the UCI Machine Learning Repository. This dataset contains 506 samples with 13 features each. The goal is to predict the median value of owner-occupied homes.
+Your task is to load the data, preprocess it, and split it into training and test sets. You can use the following code to load the data:
+
+Now that you have the data ready, you can train a Machine Learning model for regression. You can use the following models described in the Scikit-learn documentation:
+Linear Regression
+Support Vector Machine for Regression
+Decision Tree for Regression
+Random Forest for Regression
+You can use the following code to train and evaluate the models:
+'''
+print('   ## Task 4')
+
+boston_data = pd.read_csv("week_4/data/boston.csv")
+
+X_boston = boston_data.drop('medv', axis=1)
+y_boston = boston_data['medv']
+
+X_train_b, X_test_b, y_train_b, y_test_b = train_test_split(X_boston, y_boston, test_size=0.2, random_state=42)
+
+models_b = {
+    'Linear regression': LinearRegression(),
+    'SVR': SVR(),
+    'Decision Tree Regressor': DecisionTreeRegressor(),
+    'Random Forest Regressor': RandomForestRegressor(),
+}
+
+for model_name, model in models_b.items():
+    # Train the model
+    model.fit(X_train_b, y_train_b)
+    
+    # Predict on the test set
+    y_pred_b = model.predict(X_test_b)
+    
+    # Calculate result
+    mse_b = mean_squared_error(y_test_b, y_pred_b)
+    r2_b = r2_score(y_test_b, y_pred_b)
+    print(f"\n     {model_name}:")
+    print(f"MSE: {mse_b}")
+    print(f"R^2: {r2_b}")
+
+    # Grafing predicted values
+    plt.scatter(y_test_b, y_pred_b)
+    plt.title(f'Graph showing correlation of prediction values using {model_name}')
+    plt.xlabel("True values")
+    plt.ylabel("Predicted values")
+    plt.show()
+
+print('--------------------------------------------------------------------------------------------')
+
+'''
+## Task 5: Working with Unlabeled Data - Clustering
+In this task, you will learn how to work with unlabeled data using clustering. Clustering is a type of unsupervised learning that groups similar data points together. In this task, you will use the Iris dataset from the UCI Machine Learning Repository. This dataset contains 150 samples with 4 features each. The goal is to group the samples into clusters based on their features.
+Your task is to load the data, preprocess it, and train a clustering model. You can use the following code to load the data:
+
+Now that you have the data ready, you can train a clustering model. You can use the following models described in the Scikit-learn documentation: 
+KMeans
+DBSCAN
+Agglomerative Clustering
+Gaussian Mixture Model
+You can use the following code to train and evaluate the models:
+'''
+
+print('   ## Task 5')
+
+data_iris = load_iris()
+X_iris = data_iris.data # is the feutures, iris is already separated
+y_iris = data_iris.target
+
+X_train_i, X_test_i, y_train_i, y_test_i = train_test_split(X_iris, y_iris, test_size=0.2, random_state=42)
+
+models_i = {
+    'Kmeans': KMeans(n_clusters=3),
+    'DBScan': DBSCAN(eps=0.5, min_samples=5),
+    'agglomerative Clustering': AgglomerativeClustering(n_clusters=3),
+    'Gaussian Mixture': GaussianMixture(n_components=3)
+}
+
+for model_name, model in models_i.items():
+    # Train the model
+    model.fit(X_train_i, y_train_i)
+    
+    # Predict on the test set
+    if model_name == ('Kmeans' or 'Gaussian Mixture'):
+        y_pred_i = model.predict(X_test_i)
+    
+    # Calculate result
+    mse_i = mean_squared_error(y_test_i, y_pred_i)
+    r2_i = r2_score(y_test_i, y_pred_i)
+    print(f"\n     {model_name}:")
+    print(f"MSE: {mse_i}")
+    print(f"R^2: {r2_i}")
+
+    # Grafing predicted values
+    plt.scatter(X_test_i[:, 0], X_test_i[:, 1], c=y_pred_i, cmap='viridis') 
+    plt.title(f'Graph showing the clutering using {model_name}')
+    plt.xlabel("Sepal length")
+    plt.ylabel("Sepal width")
+    plt.show()

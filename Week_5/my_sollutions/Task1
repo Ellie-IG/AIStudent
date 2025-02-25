@@ -1,0 +1,46 @@
+import numpy as np
+
+'''
+Task 1: Linear regression and autograd
+Story:
+You want to use a single layer neural network to predict y given x. Instead of using the normal equations, you will instead use gradient descent to find the optimal weights and bias for the model. However, you need to implement the automatic differentiation yourself.
+Tasks:
+Implement the forward pass for a single layer neural network.
+Implement the backward pass for a single layer neural network.
+Implement the gradient descent algorithm to find the optimal weights and bias for the model.
+
+'''
+print('   ## Task 1')
+
+# Generate some data
+np.random.seed(0)
+x = np.random.rand(100, 1)
+y = 2 + 3 * x + np.random.rand(100, 1)
+
+# Initialize weights and bias
+w = np.random.rand(1, 1)
+b = np.random.rand(1)
+
+# Learning rate
+lr = 0.1
+
+# Number of epochs
+num_epochs = 1000
+
+# Gradient descent algorithm
+for epoch in range(num_epochs):
+    # Forward pass
+    y_pred = w * x + b
+    loss = np.mean((y_pred-y)**2)  # mean squared error 
+    
+    # Backward pass
+    w_grad = -2*np.mean(x*(y_pred-y))
+    b_grad = -2*np.mean(y_pred-y)
+    
+    # Update weights and bias
+    w -= lr*w_grad
+    b -= lr*b_grad
+    
+    if epoch % 100 == 0:
+        print(f"Epoch {epoch}: Loss = {loss:.4f}")
+

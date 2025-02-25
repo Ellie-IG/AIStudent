@@ -1,0 +1,239 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy import stats
+from scipy.stats import mode
+from scipy.stats import ttest_ind
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+
+'''
+## Exercise 1: Analyzing (Descriptive Statistics + Data Visualization)
+
+You have been given a dataset containing information about students' test scores. Your task is to analyze the data and provide insights to help improve student performance.
+- Load the dataset
+- Compute descriptive statistics (mean, median, mode, variance, standard deviation, range)
+- Visualize the data using histograms, box plots, scatter plots, and bar charts
+- Explain the insights you gained from the analysis
+'''
+print('     Exercise 1: ')
+
+student_scores = pd.read_csv('data/Student_Scores_Data.csv')
+
+# calculating the values
+mean_value = np.mean(student_scores['Score'])
+median_value = np.median(student_scores['Score'])
+mode_value = mode(student_scores['Score'])
+variance_value = np.var(student_scores['Score'], ddof=1)
+std_dev_value = np.std(student_scores['Score'], ddof=1)
+range_value = np.ptp(student_scores['Score'])
+
+# printing the values
+print(' Analysing student tests: ')
+print(f"Mean: {mean_value}, \nMedian: {median_value}, \nMode: {mode_value}," 
+      f"\nVariance: {variance_value}, \nStandard Deviation: {std_dev_value}, \nRange: {range_value}")
+
+#create and print a histogram with this information
+plt.hist(student_scores['Score'], bins=10, edgecolor='black')
+plt.title('Histogram displaying Student Scores')
+plt.xlabel('Score')
+plt.ylabel('Frequency')
+plt.show()
+
+#create and print a boxplot with this information
+plt.boxplot(student_scores['Score'])
+plt.title('Box Plot displaying Student Scores')
+plt.ylabel('Score')
+plt.show()
+
+#create and print a scatterplot with this information
+plt.scatter(student_scores['Student_ID'], student_scores['Score'])
+plt.title('Scatterplot displaying Student Scores')
+plt.xlabel('StudentID')
+plt.ylabel('Score')
+plt.show()
+
+print('----------------------------------------------------')
+
+'''
+## Exercise 2: Probability (Probability Theory + Simulation)
+
+- Simulate 1000 coin tosses, calculate the probability of getting heads, and compare it with the theoretical probability.
+- Simulate 1000 dice rolls, calculate the probability of getting a prime number, and compare it with the theoretical probability. Calculate the conditional probability of getting a prime number given that the number is odd.
+- Use Monte Carlo simulation to estimate the value of $pi$ by generating random points in a unit square and calculating the ratio of points inside a quarter circle to the total points.
+'''
+
+print('     Exercise 2:')
+
+# Simulate 1000 coin tosses
+coin_tosses = np.random.choice([1, 0], size=1000) #1=heads, 0=tails
+
+# calculation of  the probability of getting heads
+probability_heads = np.mean(coin_tosses)
+print(f'Theoretical probability of getting heads: 0,5\n'
+      f'Observed probability of getting heads: {probability_heads}\n')
+
+# Simulate 1000 dice rolls
+dice_rolls = np.random.randint(1, 7, size=1000)
+
+# calculation of the probability of different dice rolls
+prime_numbers = {2, 3, 5}
+primes_in_rolles = np.isin(dice_rolls, list(prime_numbers))
+probability_prime = np.mean(primes_in_rolles)
+odd_prime_numbers = {3,5}
+odd_primes_in_rolles = np.isin(dice_rolls, list(odd_prime_numbers))
+probability_odd_prime = np.mean(odd_primes_in_rolles)
+print(f'Theoretical probability of getting a prime: 0,5\n'
+      f'Observed probability of getting a prime: {probability_prime}\n'
+      f'Theoretical probability of getting an odd prime: 1/3 or 0.333...\n'
+      f'Observed conditional probability of getting an odd prime: {probability_odd_prime}\n')
+
+# Monte Carlo Estimation of Pi
+n = 1000000
+points = np.random.rand(n, 2) # Generate random points in a unit square, each point is (x, y)
+points_in_quarter_circle = 0
+for x_value, y_value in points:
+    if (x_value**2+y_value**2) <= 1:
+        points_in_quarter_circle += 1
+pi_estimate = 4*points_in_quarter_circle/n
+print(f"Estimated Pi by Monte Carlo: {pi_estimate}")
+
+print('----------------------------------------------------')
+
+'''
+## Exercise 3: Correlation and Regression (Correlation + Regression Analysis)
+
+You work for a car dealership, and your task is to analyze the relationship between car prices and their mileage. You want to determine if there is a correlation between the two variables and build a regression model to predict car prices based on mileage.
+
+- Calculate the correlation coefficient between car prices and mileage.
+- Build a simple linear regression model to predict car prices based on mileage.
+- Evaluate the model and interpret the results.
+- Provide recommendations based on the analysis.
+'''
+print('     Exercise 3:')
+
+car_data = pd.read_csv('data/Car_Data.csv')
+
+# Calculate the correlation coefficient
+correlation = car_data['Price'].corr(car_data['Mileage'])
+print(f"Correlation Coefficient: {correlation}")
+
+# Trying to compute the correlation by myself
+mean_price = np.mean(car_data['Price'])
+mean_mileage = np.mean(car_data['Mileage'])
+nomenator = np.sum((car_data['Price']-mean_price)*(car_data['Mileage']-mean_mileage))
+denomenator = np.sqrt(np.sum((car_data['Price'] - mean_price)**2)) * np.sqrt(np.sum((car_data['Mileage'] - mean_mileage)**2))
+correlation_from_scratch = nomenator/denomenator
+
+print(f"Correlation Coefficient (from scratch): {correlation_from_scratch} \n"
+      f"Difference: {correlation - correlation_from_scratch}\n")
+
+# Build a simple linear regression model
+X = car_data['Mileage'].values.reshape(-1, 1).flatten()
+y = car_data['Price'].values
+
+class LinearRegressionFromScratch:
+    def __init__(self):
+        self.slope = None
+        self.intercept = None
+
+    def fit(self, X, y):
+        mean_X = np.mean(X)
+        mean_y = np.mean(y)
+        self.slope =  sum((X - mean_X) * (y - mean_y)) / sum((X - mean_X)**2)
+        self.intercept = mean_y - (mean_X*self.slope)
+
+    def predict(self, X):
+        prediction = self.slope * X + self.intercept
+        return prediction
+
+model = LinearRegressionFromScratch()
+model.fit(X, y)
+predicted_prices = model.predict(X)
+
+# Calculate the mean squared error
+mse = mean_squared_error(y, predicted_prices)
+print(f"Mean Squared Error: {mse}")
+
+plt.scatter(X, y, color='blue', label='Actual Prices')
+plt.plot(X, predicted_prices, color='red', label='Predicted Prices')
+plt.xlabel("Mileage")
+plt.ylabel("Price")
+plt.title("Car Price Prediction using Linear Regression from Scratch")
+plt.legend()
+plt.show()
+
+# linear using scikit linear
+X2 = car_data['Mileage'].values.reshape(-1, 1)
+model2 = LinearRegression()
+model2.fit(X2, y)
+scikit_predicted = model.predict(X2)
+
+# Calculate the mean squared error
+mse2 = mean_squared_error(y, scikit_predicted)
+print(f"Mean Squared Error: {mse2}")
+
+# Plot the data and the regression line
+plt.scatter(X, y, color='blue', label='Actual Prices')
+plt.plot(X, scikit_predicted, color='red', label='Predicted Prices')
+plt.xlabel("Mileage")
+plt.ylabel("Price")
+plt.title("Car Price Prediction using Linear Regression (scikit-learn)")
+plt.legend()
+plt.savefig('car_price_prediction.png')
+plt.show()
+
+print('----------------------------------------------------')
+
+'''
+## Exercise 4: AB testing (Hypothesis Testing)
+
+- Perform hypothesis testing to determine if the new design leads to higher user engagement.
+- Calculate the p-value and interpret the results.
+- Provide recommendations based on the analysis.
+'''
+print('     Exercise 4:')
+
+test_data = pd.read_csv('data/A_B_Test_Data.csv')
+
+# Perform hypothesis testing
+old_design = test_data[test_data['Design'] == 'Old']['Engagement']
+new_design = test_data[test_data['Design'] == 'New']['Engagement']
+
+def from_scratch_ttest_ind(sample1, sample2):
+    # create all values
+    mean1 = np.mean(sample1)
+    mean2 = np.mean(sample2)
+    n1 = len(sample1)
+    n2 = len(sample2)
+    std1 = np.std(sample1)
+    std2 = np.std(sample2)
+    se1 = std1/np.sqrt(n1)
+    se2 = std2/np.sqrt(n2)
+    # Calculate the t-statistic = (mean1 - mean2) / sqrt(se1^2 + se2^2)
+    t_stat = (mean1 - mean2) / np.sqrt(se1**2 + se2**2)
+    # Calculate the degrees of freedom = n1 + n2 - 2
+    df = n1 + n2 -2
+    # Calculate the p-value = 2 * (1 - cdf(abs(t-statistic), df))
+    p_value = 2 * (1 - stats.t.cdf(abs(t_stat), df))
+    # 7. Return the t-statistic and p-value
+    return t_stat, p_value
+
+t_stat, p_value = from_scratch_ttest_ind(old_design, new_design)
+print(f"t-statistic: {t_stat}")
+print(f"p-value: {p_value}")
+print("From Scratch:")
+if p_value < 0.05:
+    print("The new design leads to significantly higher user engagement.")
+else:
+    print("There is no significant difference in user engagement between the old and new designs.")
+
+# We can use the built-in t-test function for comparison
+t_stat, p_value = ttest_ind(old_design, new_design)
+print(f"t-statistic: {t_stat}")
+print(f"p-value: {p_value}")
+print("Using ttest_ind:")
+if p_value < 0.05:
+    print("The new design leads to significantly higher user engagement.")
+else:
+    print("There is no significant difference in user engagement between the old and new designs.")
