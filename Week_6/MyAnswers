@@ -1,0 +1,25 @@
+All thesee are answered from the code in infer.py ( which I coppied to Modal_app.py) and the datasets from the shared google drive. 
+
+Task 1
+Try to use Modal's metrics and analyse the CPU, RAM and GPU utilisation for the current process(You can find this in the Apps/container dashboard). Is that optimal? Try to find modal documentation on how to limit CPU and RAM for a given app. What if you don't use a GPU?
+It was not optimal, GPU moved al over the place. We want it to be steady close to 100.
+"Each Modal container has a default reservation of 0.125 CPU cores and 128 MiB of memory. Containers can exceed this minimum if the worker has available CPU or memory. The simplest way to reduce LLM inference’s RAM requirements is to make the model’s parameters smaller, to fit their values in a smaller number of bits, like four or eight. This is known as quantization."
+CPU --> @app.function(cpu=8.0)
+RAM --> @app.function(memory=32768)
+Or --> resources={"cpu": 2, "memory": "4GB"},
+Note: here I didn't try messing with the CPU and mempry due to my lesser understanding of their billing and credit system.
+
+Task 2
+We had a very simple schedule to run the app. What if there is a complex schedule like every other day of the week(Mon, Wed, Fri)? Explore Cron and try to schedule tasks for complex schedules.
+--> * * * * 1,3,5
+Note now it is every minute in every hours. This should be changed
+
+Task 3
+We have used a `batch_size` parameter and set it $8$. Why $8$? Try bigger batch sizes and see how the system usage changes. Compare execution times, RAM usage and GPU VRAM usage for atleast 5 different batch sizes?
+The code can fail due to the batch size. I don't remember why we had 8, but I believe it was as this was a good balance of performance and memory usage. You can always increase batch size to increase speed/performance, but this will strain you rmemory more. (I don't have good memory on this computer, so for my safety I won't play too much with this. )
+
+Task 4
+Repeat the above Tasks 1 and 3 with the 100k dataset and find out why it fails. **Hint** - Data gets 10 times larger but the GPU memory stays the same. A10G has 10GB VRAM. Change it to an appropriate GPU with enough memory(https://modal.com/docs/guide/gpu) and try to run it. What if you don't use GPU/cuda?
+When run ning the 100k the data is 10 times lager whihc is a massive increase. Since the code has specified to use A10G GPU which has 10GB VRAM, it can't handle the 100k dataset, especially since the dataset consumes a significant amount of memory. 'Tthe available GPU memory stays fixed at 10GB'
+Other possible parameters : T4, L4, A10G, A100-40GB, A100-80GB, L40S, H100
+I was scared to run the code with another parameter, I don't understand the credit and pricing of Modal. Butr I guess I would start by testing A100. (line 48 --> gpu=["A100"])
